@@ -1,0 +1,11 @@
+version: "3"
+
+services:
+  TG:
+    build: .
+    container_name: payment_bot
+    command: python payment_bot.py
+    ports:
+      - 80:80
+    volumes:
+      - ./:/app
