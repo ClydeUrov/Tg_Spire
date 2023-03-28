@@ -1,7 +1,7 @@
 version: "3"
 
 services:
-  TG:
+  web_tg:
     build: .
     container_name: payment_bot
     command: python payment_bot.py

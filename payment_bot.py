@@ -177,6 +177,7 @@ async def my_while(update, session):
         session = stripe.checkout.Session.retrieve(session.id)
 
     if session.status == "complete":
+        await cart.dump_cart(update.message.chat_id)
         await update.message.reply_text(f"Оплата прошла успешно!")
     elif session.status == "expired":
         kb = [[KeyboardButton(text="💲 Оплатить 💲")],
