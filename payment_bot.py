@@ -1,13 +1,16 @@
 # import logging
-import time
-import stripe
-import os
-from dotenv import load_dotenv
 import asyncio
+import os
+import time
+
+import stripe
+from dotenv import load_dotenv
+from telegram import (InlineKeyboardButton, InlineKeyboardMarkup,
+                      KeyboardButton, ReplyKeyboardMarkup, Update)
 from telegram.constants import ParseMode
-from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.ext import (Application, CommandHandler, MessageHandler, ContextTypes, filters, CallbackQueryHandler,
-                          ConversationHandler, CallbackContext)
+from telegram.ext import (Application, CallbackContext, CallbackQueryHandler,
+                          CommandHandler, ContextTypes, ConversationHandler,
+                          MessageHandler, filters)
 
 # logging.basicConfig(
 #     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -65,12 +68,17 @@ async def choose_products(update: Update, context: CallbackContext) -> None:
             kb = [[KeyboardButton(text="🏰 Меню 🏰"), KeyboardButton(text="🧺 Корзина 🧺")],
                   [KeyboardButton(text="↩️ Назад ↩️")]]
             keyboard = ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
-            await query.message.reply_text(f'Список имеющихся {query.data} в вашем распоряжении:', reply_markup=keyboard)
+            await query.message.reply_text(
+                f'Список имеющихся {query.data} в вашем распоряжении:',
+                reply_markup=keyboard
+            )
             keyword = [[InlineKeyboardButton(text='+1', callback_data='+1'),
                         InlineKeyboardButton(text='-1', callback_data='-1')],
                        [InlineKeyboardButton(text=f'В корзине: 0', callback_data='cart')]]
             r_markup = InlineKeyboardMarkup(inline_keyboard=keyword)
-            product_list = [item for item in stripe.Product.list()['data'] if item['statement_descriptor'] == query.data]
+            product_list = [
+                item for item in stripe.Product.list()['data'] if item['statement_descriptor'] == query.data
+            ]
             for product in product_list:
                 price = stripe.Price.retrieve(product['default_price'])
                 await cart.add_item(query.from_user.id, product['name'], 0, price['unit_amount'])
@@ -147,8 +155,9 @@ async def payment_processing(update: Update, context: ContextTypes.DEFAULT_TYPE)
             int(price) * quantity for product_name, (quantity, price) in items.items() if quantity)
         if total_amount > 17:
             line_items = [
-                {'price_data': {'currency': 'UAH', 'product_data': {'name': product_name}, 'unit_amount': int(price) * 100},
-                 'quantity': quantity} for product_name, (quantity, price) in items.items() if quantity
+                {'quantity': quantity, 'price_data': {
+                    'currency': 'UAH', 'product_data': {'name': product_name}, 'unit_amount': int(price) * 100}}
+                for product_name, (quantity, price) in items.items() if quantity
             ]
             session = stripe.checkout.Session.create(
                 payment_method_types=['card'],
@@ -184,7 +193,9 @@ async def my_while(update, session):
               [KeyboardButton(text="🏰 Меню 🏰"), KeyboardButton(text="🧺 Корзина 🧺")]]
         keyboard = ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
         await update.message.reply_text(
-            f'Что-то пошло не так. Попробуйте снова нажав на кнопку "Оплатить" или обратитесь а администратору.', reply_markup=keyboard)
+            f'Что-то пошло не так. Попробуйте снова нажав на кнопку "Оплатить" или обратитесь а администратору.',
+            reply_markup=keyboard
+        )
 
 
 async def stop_polling(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -194,7 +205,7 @@ async def stop_polling(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 def main():
     """Run the bot."""
     load_dotenv()
-    stripe.api_key = os.environ["SRTIPE_KEY"]
+    stripe.api_key = os.environ["STRIPE_KEY"]
     application = Application.builder().token(os.environ["TG_TOKEN"]).build()
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start_callback)],
